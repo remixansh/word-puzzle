@@ -1,4 +1,4 @@
-const PROD_SERVER = ""; 
+const PROD_SERVER = "https://word-puzzle-iaz0.onrender.com"; 
 
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const socket = io(isLocal ? 'http://localhost:5000' : PROD_SERVER);

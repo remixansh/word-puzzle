@@ -62,10 +62,10 @@ socket.on('game_start', (data) => {
     document.getElementById('game').style.display = 'block';
     
     currentRoom = localStorage.getItem('wordgame_roomid') || currentRoom;
-    document.getElementById('room-display').innerText = `Room: ${currentRoom}`;
+    document.getElementById('room-display').innerText = `${currentRoom}`;
     const themeName = data.theme || 'Random';
     const icon = getThemeIcon(themeName);
-    document.getElementById('theme-display').innerText = `Theme: ${themeName} ${icon}`;
+    document.getElementById('theme-display').innerText = `${themeName} ${icon}`;
     
     const currentR = data.current_round || 1;
     const totalR = data.total_rounds || 5;
@@ -114,20 +114,24 @@ function markFoundWord(word, finderId, indices) {
 socket.on('game_over', (data) => {
     const modal = document.getElementById('game-over');
     const msg = document.getElementById('winner-msg');
+    const finalScoreMsg = document.getElementById('final-score-msg');
     
     localStorage.removeItem('wordgame_roomid');
 
     if(data.winner === myUserId) {
-        msg.innerText = "🏆 YOU WIN! 🏆";
-        msg.style.color = "green";
+        msg.innerText = "VICTORY! 🏆";
+        msg.style.color = "#00b894";
+        if(finalScoreMsg) finalScoreMsg.innerText = "You conquered the grid!";
     } else if (data.winner === 'draw') {
-        msg.innerText = "🤝 DRAW!";
-        msg.style.color = "blue";
+        msg.innerText = "DRAW! 🤝";
+        msg.style.color = "#74b9ff";
+        if(finalScoreMsg) finalScoreMsg.innerText = "A perfectly matched battle.";
     } else {
-        msg.innerText = "☠️ YOU LOSE! ☠️";
-        msg.style.color = "red";
+        msg.innerText = "DEFEAT 💀";
+        msg.style.color = "#ff7675";
+        if(finalScoreMsg) finalScoreMsg.innerText = "Better luck next time.";
     }
-    modal.style.display = 'block';
+    modal.style.display = 'flex';
 });
 
 // --- ACTIONS ---
@@ -164,6 +168,9 @@ function renderBoard(grid) {
             cell.dataset.char = char;
             cell.onmousedown = () => handleSelect(cell);
             cell.ontouchstart = (e) => { e.preventDefault(); handleSelect(cell); };
+            cell.onmouseover = (e) => {
+                if(e.buttons === 1) handleSelect(cell);
+            }
             container.appendChild(cell);
         });
     });
@@ -186,7 +193,8 @@ function updateScoreboard(scores) {
 }
 
 function handleSelect(cell) {
-    if(cell.classList.contains('found-me') || cell.classList.contains('found-enemy')) return;
+    // FIX: Removed the check that blocked selecting found words.
+    // This allows you to select 'A' in TACO even if it is already green from PASTA.
 
     if (selectionTimer) clearTimeout(selectionTimer);
     selectionTimer = setTimeout(() => {

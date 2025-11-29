@@ -227,11 +227,12 @@ input:focus { border-color: var(--secondary); background: rgba(0,0,0,0.3); }
 
 /* SELECTION STATES */
 .cell.selected {
-    background: var(--accent);
-    color: #2d3436;
+    background: var(--accent) !important;
+    color: #2d3436 !important;
     transform: scale(0.95);
     box-shadow: 0 0 15px rgba(253, 203, 110, 0.4);
     border-radius: 50%;
+    z-index: 10; /* Ensures selection is above found words */
 }
 
 .found-me {

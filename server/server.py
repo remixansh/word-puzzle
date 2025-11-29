@@ -17,9 +17,9 @@ if not firebase_admin._apps:
     try:
         cred = credentials.Certificate(cred_path)
         firebase_admin.initialize_app(cred)
-        print(f"✅ Firebase initialized using {cred_path}")
+        print(f"Firebase initialized using {cred_path}")
     except Exception as e:
-        print(f"❌ Firebase Init Error: {e}")
+        print(f"Firebase Init Error: {e}")
 
 db = firestore.client()
 
@@ -132,12 +132,25 @@ def word_found(sid, data):
                 save_room_state(room_id)
                 sio.emit('game_start', {'grid': room['grid'], 'words': room['words'], 'scores': room['scores'], 'theme': room['theme'], 'found_history': [], 'current_round': room['current_round'], 'total_rounds': room['total_rounds']}, room=room_id)
             else:
+                # --- GAME OVER LOGIC ---
                 winner_id = max(room['scores'], key=room['scores'].get)
                 sio.emit('game_over', {'winner': winner_id}, room=room_id)
+                
+                # --- CLEANUP: DELETE ROOM FROM DB & MEMORY ---
+                print(f"Deleting Room {room_id} (Game Finished)")
+                
+                # 1. Remove from Firestore
+                try:
+                    db.collection('active_rooms').document(room_id).delete()
+                except Exception as e:
+                    print(f"Error deleting from DB: {e}")
+
+                # 2. Remove from Memory
+                if room_id in rooms:
+                    del rooms[room_id]
 
 # --- APP EXECUTION ---
 if __name__ == '__main__':
-    # Cloud expects us to listen on the 'PORT' environment variable
     port = int(os.environ.get('PORT', 5000))
     print(f"Server starting on port {port}...")
     eventlet.wsgi.server(eventlet.listen(('', port)), app)

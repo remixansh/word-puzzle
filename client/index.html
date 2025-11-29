@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Search Battle</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+</head>
+<body>
+
+    <!-- LOBBY SCREEN -->
+    <div id="lobby">
+        <h1>Word Battle ⚔️</h1>
+        <p class="subtitle">1v1 Real-time Puzzle</p>
+        
+        <div class="card">
+            <div class="form-group">
+                <label for="roundSelect">Number of Rounds:</label>
+                <select id="roundSelect">
+                    <option value="3">3 Rounds</option>
+                    <option value="5" selected>5 Rounds</option>
+                    <option value="10">10 Rounds</option>
+                    <option value="15">15 Rounds</option>
+                </select>
+            </div>
+
+            <button onclick="createRoom()" class="btn primary">Create New Room</button>
+            
+            <div class="divider">OR</div>
+            
+            <input type="text" id="roomInput" placeholder="Enter Room ID" maxlength="4">
+            <button onclick="joinRoom()" class="btn secondary">Join Room</button>
+        </div>
+        
+        <p id="status">Waiting for action...</p>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game" style="display:none;">
+        <div id="header">
+            <div class="info-bar">
+                <span id="room-display">Room: ????</span>
+                <span id="round-display" class="tag round-tag">Round 1/5</span>
+                <span id="theme-display" class="tag theme-tag">Theme: ???</span>
+            </div>
+            
+            <div id="scoreboard">
+                <div class="score-box p1">YOU: <span id="my-score">0</span></div>
+                <div class="score-box p2">ENEMY: <span id="enemy-score">0</span></div>
+            </div>
+        </div>
+
+        <div id="word-list"></div>
+        <div id="grid-container"></div>
+    </div>
+
+    <!-- GAME OVER MODAL -->
+    <div id="game-over" class="modal">
+        <div class="modal-content">
+            <h1 id="winner-msg"></h1>
+            <p id="final-score-msg"></p>
+            <button onclick="location.reload()" class="btn primary">Play Again</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

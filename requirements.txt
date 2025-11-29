@@ -1,3 +1,0 @@
-eventlet
-python-socketio
-firebase-admin

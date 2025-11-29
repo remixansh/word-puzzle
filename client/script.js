@@ -65,7 +65,9 @@ socket.on('game_start', (data) => {
     document.getElementById('room-display').innerText = `${currentRoom}`;
     const themeName = data.theme || 'Random';
     const icon = getThemeIcon(themeName);
-    document.getElementById('theme-display').innerText = `${themeName} ${icon}`;
+    
+    const displayName = themeName.charAt(0).toUpperCase() + themeName.slice(1);
+    document.getElementById('theme-display').innerText = `${displayName} ${icon}`;
     
     const currentR = data.current_round || 1;
     const totalR = data.total_rounds || 5;

@@ -2,65 +2,109 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Word Search Battle</title>
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
 
-    <!-- LOBBY SCREEN -->
-    <div id="lobby">
-        <h1>Word Battle ⚔️</h1>
-        <p class="subtitle">1v1 Real-time Puzzle</p>
+    <div class="app-container">
         
-        <div class="card">
-            <div class="form-group">
-                <label for="roundSelect">Number of Rounds:</label>
-                <select id="roundSelect">
-                    <option value="3">3 Rounds</option>
-                    <option value="5" selected>5 Rounds</option>
-                    <option value="10">10 Rounds</option>
-                    <option value="15">15 Rounds</option>
-                </select>
-            </div>
+        <!-- BACKGROUND ANIMATION -->
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
 
-            <button onclick="createRoom()" class="btn primary">Create New Room</button>
+        <!-- LOBBY SCREEN -->
+        <div id="lobby" class="screen active">
+            <div class="logo-area">
+                <h1>Word Battle <span class="accent">⚔️</span></h1>
+                <p class="subtitle">Real-time Multiplayer Puzzle</p>
+            </div>
             
-            <div class="divider">OR</div>
+            <div class="card lobby-card">
+                <div class="form-group">
+                    <label for="roundSelect">Match Length</label>
+                    <div class="select-wrapper">
+                        <select id="roundSelect">
+                            <option value="3">3 Rounds (Quick)</option>
+                            <option value="5" selected>5 Rounds (Standard)</option>
+                            <option value="10">10 Rounds (Long)</option>
+                            <option value="15">15 Rounds (Marathon)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="createRoom()" class="btn btn-primary pulse">
+                    <span>Create Room</span>
+                    <div class="btn-shine"></div>
+                </button>
+                
+                <div class="divider">
+                    <span>OR</span>
+                </div>
+                
+                <div class="join-area">
+                    <input type="text" id="roomInput" placeholder="Enter 4-digit Code" maxlength="4" autocomplete="off">
+                    <button onclick="joinRoom()" class="btn btn-secondary">Join Game</button>
+                </div>
+            </div>
             
-            <input type="text" id="roomInput" placeholder="Enter Room ID" maxlength="4">
-            <button onclick="joinRoom()" class="btn secondary">Join Room</button>
+            <p id="status" class="status-msg">Ready to connect...</p>
         </div>
-        
-        <p id="status">Waiting for action...</p>
-    </div>
 
-    <!-- GAME SCREEN -->
-    <div id="game" style="display:none;">
-        <div id="header">
-            <div class="info-bar">
-                <span id="room-display">Room: ????</span>
-                <span id="round-display" class="tag round-tag">Round 1/5</span>
-                <span id="theme-display" class="tag theme-tag">Theme: ???</span>
+        <!-- GAME SCREEN -->
+        <div id="game" class="screen" style="display:none;">
+            <!-- HEADER INFO -->
+            <div class="game-header">
+                <div class="info-pill">
+                    <span class="label">ROOM</span>
+                    <span id="room-display" class="value">????</span>
+                </div>
+                <div class="info-pill round-pill">
+                    <span id="round-display">1/5</span>
+                </div>
+                <div class="info-pill theme-pill">
+                    <span id="theme-display">???</span>
+                </div>
             </div>
             
-            <div id="scoreboard">
-                <div class="score-box p1">YOU: <span id="my-score">0</span></div>
-                <div class="score-box p2">ENEMY: <span id="enemy-score">0</span></div>
+            <!-- SCOREBOARD -->
+            <div id="scoreboard" class="scoreboard">
+                <div class="player-card p1">
+                    <div class="player-label">YOU</div>
+                    <div id="my-score" class="score">0</div>
+                </div>
+                <div class="vs-badge">VS</div>
+                <div class="player-card p2">
+                    <div class="player-label">ENEMY</div>
+                    <div id="enemy-score" class="score">0</div>
+                </div>
+            </div>
+
+            <!-- WORD LIST -->
+            <div class="word-container">
+                <div id="word-list" class="word-list"></div>
+            </div>
+
+            <!-- GRID -->
+            <div class="grid-wrapper">
+                <div id="grid-container"></div>
             </div>
         </div>
 
-        <div id="word-list"></div>
-        <div id="grid-container"></div>
     </div>
 
     <!-- GAME OVER MODAL -->
     <div id="game-over" class="modal">
-        <div class="modal-content">
-            <h1 id="winner-msg"></h1>
-            <p id="final-score-msg"></p>
-            <button onclick="location.reload()" class="btn primary">Play Again</button>
+        <div class="modal-backdrop"></div>
+        <div class="modal-content pop-in">
+            <div class="trophy-icon">🏆</div>
+            <h1 id="winner-msg">GAME OVER</h1>
+            <p id="final-score-msg">The battle has ended.</p>
+            <button onclick="location.reload()" class="btn btn-primary">Play Again</button>
         </div>
     </div>
 

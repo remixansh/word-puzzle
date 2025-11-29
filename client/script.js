@@ -88,6 +88,12 @@ socket.on('update_board', (data) => {
     updateScoreboard(data.scores);
 });
 
+socket.on('player_left', (data) => {
+    alert(data.msg);
+    localStorage.removeItem('wordgame_roomid');
+    location.reload();
+});
+
 function markFoundWord(word, finderId, indices) {
     const wElem = document.getElementById(`word-${word}`);
     if(wElem) wElem.classList.add('crossed');
@@ -152,6 +158,12 @@ function joinRoom() {
     }
 }
 
+function exitGame() {
+    if(confirm("Exit game? This will end the match for everyone.")) {
+        socket.emit('leave_game', { roomId: currentRoom });
+    }
+}
+
 // --- RENDERERS ---
 
 function renderBoard(grid) {
@@ -168,6 +180,7 @@ function renderBoard(grid) {
             cell.dataset.char = char;
             cell.onmousedown = () => handleSelect(cell);
             cell.ontouchstart = (e) => { e.preventDefault(); handleSelect(cell); };
+            // Add mouseover for drag selection
             cell.onmouseover = (e) => {
                 if(e.buttons === 1) handleSelect(cell);
             }
@@ -193,9 +206,6 @@ function updateScoreboard(scores) {
 }
 
 function handleSelect(cell) {
-    // FIX: Removed the check that blocked selecting found words.
-    // This allows you to select 'A' in TACO even if it is already green from PASTA.
-
     if (selectionTimer) clearTimeout(selectionTimer);
     selectionTimer = setTimeout(() => {
         selectedPath.forEach(c => c.classList.remove('selected'));

@@ -116,6 +116,26 @@ def join_room(sid, data):
     sio.emit('game_start', {'grid': room['grid'], 'words': room['words'], 'scores': room['scores'], 'theme': room['theme'], 'found_history': room['found_history'], 'current_round': room.get('current_round', 1), 'total_rounds': room.get('total_rounds', 5)}, room=room_id)
 
 @sio.event
+def leave_game(sid, data):
+    room_id = str(data.get('roomId')).strip()
+    
+    if room_id in rooms:
+        # Notify everyone in the room that the game is ending
+        sio.emit('player_left', {'msg': 'A player has left the game. The room has been closed.'}, room=room_id)
+        
+        # Cleanup
+        print(f"Deleting Room {room_id} (Player Left)")
+        
+        # 1. Remove from Firestore
+        try:
+            db.collection('active_rooms').document(room_id).delete()
+        except Exception as e:
+            print(f"Error deleting from DB: {e}")
+
+        # 2. Remove from Memory
+        del rooms[room_id]
+
+@sio.event
 def word_found(sid, data):
     room_id = str(data['roomId']); word = data['word']; user_id = data.get('userId', f"anon_{sid}")
     if room_id not in rooms: return

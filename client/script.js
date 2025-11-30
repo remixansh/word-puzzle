@@ -168,7 +168,8 @@ socket.on('game_over', (data) => {
 function createRoom() {
     document.getElementById('status').innerText = "Creating Room...";
     localStorage.removeItem('wordgame_roomid');
-    const rounds = document.getElementById('roundSelect').value;
+    const selectedRound = document.querySelector('input[name="rounds"]:checked');
+    const rounds = selectedRound ? selectedRound.value : 5;
     socket.emit('create_room', { userId: myUserId, rounds: rounds });
 }
 

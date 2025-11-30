@@ -110,6 +110,13 @@ socket.on('update_board', (data) => {
     updateScoreboard(data.scores);
 });
 
+// NEW: Handle player leaving
+socket.on('player_left', (data) => {
+    alert(data.msg);
+    localStorage.removeItem('wordgame_roomid');
+    location.reload();
+});
+
 function markFoundWord(word, finderId, indices) {
     const wElem = document.getElementById(`word-${word}`);
     if(wElem) wElem.classList.add('crossed');

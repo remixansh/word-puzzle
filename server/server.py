@@ -8,10 +8,8 @@ from firebase_admin import credentials, firestore
 
 # 1. SETUP FIREBASE
 if not firebase_admin._apps:
-    # Check for local file (development) or cloud secret path (Render)
     local_key = "serviceAccountKey.json"
     cloud_key = "/etc/secrets/serviceAccountKey.json"
-    
     cred_path = local_key if os.path.exists(local_key) else cloud_key
     
     try:
@@ -96,8 +94,19 @@ def create_room(sid, data):
     user_id = data.get('userId', f"anon_{sid}")
     total_rounds = int(data.get('rounds', 5))
     sio.enter_room(sid, room_id)
+    
     round_data = generate_new_round()
-    rooms[room_id] = {'roomId': room_id, 'current_round': 1, 'total_rounds': total_rounds, 'scores': {user_id: 0}, 'players': {user_id: sid}, **round_data}
+    
+    rooms[room_id] = {
+        'roomId': room_id, 
+        'current_round': 1, 
+        'total_rounds': total_rounds, 
+        'scores': {user_id: 0}, 
+        'players': {user_id: sid}, 
+        'status': 'waiting',
+        **round_data
+    }
+    
     save_room_state(room_id)
     sio.emit('room_created', {'roomId': room_id, 'theme': round_data['theme']}, room=sid)
 
@@ -105,15 +114,51 @@ def create_room(sid, data):
 def join_room(sid, data):
     room_id = str(data.get('roomId')).strip()
     user_id = data.get('userId', f"anon_{sid}")
+    
     if room_id not in rooms:
         if not load_room_state(room_id):
             sio.emit('error', 'Room not found!', room=sid); return
+
     room = rooms[room_id]
+    
+    if len(room['players']) >= 2 and user_id not in room['players']:
+         sio.emit('error', 'Room is full!', room=sid); return
+
     sio.enter_room(sid, room_id)
     room['players'][user_id] = sid
+    
     if user_id not in room['scores']: room['scores'][user_id] = 0
+    
+    room['status'] = 'playing'
     save_room_state(room_id)
-    sio.emit('game_start', {'grid': room['grid'], 'words': room['words'], 'scores': room['scores'], 'theme': room['theme'], 'found_history': room['found_history'], 'current_round': room.get('current_round', 1), 'total_rounds': room.get('total_rounds', 5)}, room=room_id)
+    
+    game_data = {
+        'grid': room['grid'], 'words': room['words'], 
+        'scores': room['scores'], 'theme': room['theme'], 
+        'found_history': room['found_history'], 
+        'current_round': room.get('current_round', 1), 
+        'total_rounds': room.get('total_rounds', 5)
+    }
+    sio.emit('game_start', game_data, room=room_id)
+
+@sio.event
+def leave_game(sid, data):
+    room_id = str(data.get('roomId')).strip()
+    
+    # Broadcast to the room that a player left
+    if room_id in rooms:
+        sio.emit('player_left', {'msg': 'A player has left the game. Room closed.'}, room=room_id)
+        
+        print(f"Deleting Room {room_id} (Player Left)")
+        
+        # Cleanup from DB
+        try:
+            db.collection('active_rooms').document(room_id).delete()
+        except Exception as e:
+            print(f"Error deleting from DB: {e}")
+
+        # Cleanup from Memory
+        del rooms[room_id]
 
 @sio.event
 def word_found(sid, data):
@@ -132,24 +177,14 @@ def word_found(sid, data):
                 save_room_state(room_id)
                 sio.emit('game_start', {'grid': room['grid'], 'words': room['words'], 'scores': room['scores'], 'theme': room['theme'], 'found_history': [], 'current_round': room['current_round'], 'total_rounds': room['total_rounds']}, room=room_id)
             else:
-                # --- GAME OVER LOGIC ---
                 winner_id = max(room['scores'], key=room['scores'].get)
                 sio.emit('game_over', {'winner': winner_id}, room=room_id)
-                
-                # --- CLEANUP: DELETE ROOM FROM DB & MEMORY ---
-                print(f"Deleting Room {room_id} (Game Finished)")
-                
-                # 1. Remove from Firestore
+                print(f"Deleting Room {room_id} (Finished)")
                 try:
                     db.collection('active_rooms').document(room_id).delete()
-                except Exception as e:
-                    print(f"Error deleting from DB: {e}")
+                except: pass
+                if room_id in rooms: del rooms[room_id]
 
-                # 2. Remove from Memory
-                if room_id in rooms:
-                    del rooms[room_id]
-
-# --- APP EXECUTION ---
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print(f"Server starting on port {port}...")

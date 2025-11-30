@@ -24,12 +24,7 @@ window.onload = () => {
     if (savedRoom) {
         document.getElementById('roomInput').value = savedRoom;
         document.getElementById('status').innerText = "Rejoining previous game...";
-        setTimeout(() => {
-             // Re-verify the room ID hasn't been cleared by a fresh action
-             if(localStorage.getItem('wordgame_roomid') === savedRoom) {
-                 joinRoom(true); // true = isRejoin
-             }
-        }, 500); 
+        setTimeout(() => joinRoom(), 500); 
     }
 };
 
@@ -49,37 +44,25 @@ function getThemeIcon(theme) {
 // --- SOCKET LISTENERS ---
 
 socket.on('room_created', (data) => {
-    // 1. Show the Room ID
-    document.getElementById('status').innerText = `Room Created: ${data.roomId}`;
-    
-    const waitingMsg = document.createElement('div');
-    waitingMsg.innerHTML = `<br><b>Waiting for opponent to join...</b> ⏳`;
-    waitingMsg.style.color = "#f39c12"; 
-    document.getElementById('status').appendChild(waitingMsg);
-    
+    document.getElementById('status').innerText = `Room ID: ${data.roomId}`;
     currentRoom = data.roomId;
     localStorage.setItem('wordgame_roomid', currentRoom);
-    const card = document.querySelector('.card');
-    if(card) card.style.display = 'none';
 });
 
 socket.on('error', (msg) => {
     alert("Error: " + msg);
-    // If room invalid, clear storage to prevent infinite rejoin loop
-    if(msg.includes('not found') || msg.includes('full')) {
+    if(msg.includes('not found')) {
         localStorage.removeItem('wordgame_roomid');
         location.reload(); 
     }
 });
 
 socket.on('game_start', (data) => {
-    // Hide lobby, Show Game
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('game').style.display = 'block';
     
     currentRoom = localStorage.getItem('wordgame_roomid') || currentRoom;
     document.getElementById('room-display').innerText = `${currentRoom}`;
-    
     const themeName = data.theme || 'Random';
     const icon = getThemeIcon(themeName);
     const displayName = themeName.charAt(0).toUpperCase() + themeName.slice(1);
@@ -162,26 +145,16 @@ socket.on('game_over', (data) => {
 
 function createRoom() {
     document.getElementById('status').innerText = "Creating Room...";
-    
-    localStorage.removeItem('wordgame_roomid');
-    
     const rounds = document.getElementById('roundSelect').value;
     socket.emit('create_room', { userId: myUserId, rounds: rounds });
 }
 
-function joinRoom(isRejoin = false) {
-    let id = isRejoin ? localStorage.getItem('wordgame_roomid') : document.getElementById('roomInput').value.trim();
-    
+function joinRoom() {
+    const id = document.getElementById('roomInput').value.trim();
     if(id) {
-        if(!isRejoin) {
-             localStorage.removeItem('wordgame_roomid');
-        }
-        
         document.getElementById('status').innerText = "Joining...";
         socket.emit('join_room', { roomId: id, userId: myUserId });
         currentRoom = id;
-        
-        // Save new ID
         localStorage.setItem('wordgame_roomid', id);
     }
 }
@@ -208,6 +181,7 @@ function renderBoard(grid) {
             cell.dataset.char = char;
             cell.onmousedown = () => handleSelect(cell);
             cell.ontouchstart = (e) => { e.preventDefault(); handleSelect(cell); };
+            // Add mouseover for drag selection
             cell.onmouseover = (e) => {
                 if(e.buttons === 1) handleSelect(cell);
             }

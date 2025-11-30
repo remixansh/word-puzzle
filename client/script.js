@@ -65,7 +65,7 @@ socket.on('game_start', (data) => {
     document.getElementById('room-display').innerText = `${currentRoom}`;
     const themeName = data.theme || 'Random';
     const icon = getThemeIcon(themeName);
-    
+
     const displayName = themeName.charAt(0).toUpperCase() + themeName.slice(1);
     document.getElementById('theme-display').innerText = `${displayName} ${icon}`;
     
@@ -154,6 +154,7 @@ function joinRoom() {
     const id = document.getElementById('roomInput').value.trim();
     if(id) {
         document.getElementById('status').innerText = "Joining...";
+        localStorage.removeItem('wordgame_roomid');
         socket.emit('join_room', { roomId: id, userId: myUserId });
         currentRoom = id;
         localStorage.setItem('wordgame_roomid', id);

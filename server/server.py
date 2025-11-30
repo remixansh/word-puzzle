@@ -103,6 +103,7 @@ def create_room(sid, data):
         'total_rounds': total_rounds, 
         'scores': {user_id: 0}, 
         'players': {user_id: sid}, 
+        'creator_sid': sid, # Track creator to handle disconnect
         'status': 'waiting',
         **round_data
     }
@@ -144,20 +145,38 @@ def join_room(sid, data):
 @sio.event
 def leave_game(sid, data):
     room_id = str(data.get('roomId')).strip()
+    cleanup_room(room_id)
+
+@sio.event
+def disconnect(sid):
+    rooms_to_delete = []
     
-    # Broadcast to the room that a player left
+    for room_id, room in rooms.items():
+        # Case 1: Creator disconnects while waiting (Refresh logic)
+        if room.get('status') == 'waiting' and room.get('creator_sid') == sid:
+            print(f"Creator {sid} disconnected from waiting room {room_id}. Deleting room.")
+            rooms_to_delete.append(room_id)
+        
+        # Case 2: Any player disconnects during active game
+        elif room.get('status') == 'playing' and sid in room['players'].values():
+            print(f"Player {sid} disconnected from active room {room_id}.")
+            sio.emit('player_left', {'msg': 'Opponent disconnected. Room closed.'}, room=room_id)
+            rooms_to_delete.append(room_id)
+
+    for r_id in rooms_to_delete:
+        cleanup_room(r_id)
+
+def cleanup_room(room_id):
     if room_id in rooms:
-        sio.emit('player_left', {'msg': 'A player has left the game. Room closed.'}, room=room_id)
+        print(f"Cleaning up Room {room_id}")
+        # Notify clients just in case (e.g. valid leave_game call)
+        sio.emit('player_left', {'msg': 'Room closed.'}, room=room_id)
         
-        print(f"Deleting Room {room_id} (Player Left)")
-        
-        # Cleanup from DB
         try:
             db.collection('active_rooms').document(room_id).delete()
         except Exception as e:
             print(f"Error deleting from DB: {e}")
-
-        # Cleanup from Memory
+        
         del rooms[room_id]
 
 @sio.event
@@ -179,11 +198,7 @@ def word_found(sid, data):
             else:
                 winner_id = max(room['scores'], key=room['scores'].get)
                 sio.emit('game_over', {'winner': winner_id}, room=room_id)
-                print(f"Deleting Room {room_id} (Finished)")
-                try:
-                    db.collection('active_rooms').document(room_id).delete()
-                except: pass
-                if room_id in rooms: del rooms[room_id]
+                cleanup_room(room_id)
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

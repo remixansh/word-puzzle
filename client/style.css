@@ -73,17 +73,31 @@ h1 { margin: 0; font-weight: 900; font-size: 2.5rem; text-shadow: 0 4px 10px rgb
 
 /* Modern Round Selector Styles */
 .select-wrapper {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-top: 10px;
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.select-wrapper::after {
+    content: "▼";
+    font-size: 0.8rem;
+    position: absolute;
+    right: 20px;
+    color: var(--primary);
+    pointer-events: none;
+    transition: 0.3s;
+}
+
+.select-wrapper:hover::after {
+    color: var(--secondary);
+    transform: translateY(2px);
 }
 
 .select-wrapper select {
     width: 100%;
-    padding: 15px;
-    background: rgba(42, 42, 64, 0.8); /* Darker card bg */
-    border: 2px solid rgba(108, 92, 231, 0.3); /* Primary color tint */
+    padding: 15px 20px;
+    background: rgba(42, 42, 64, 0.6);
+    border: 2px solid rgba(255,255,255,0.1);
     border-radius: var(--radius);
     color: white;
     font-size: 1rem;
@@ -92,36 +106,28 @@ h1 { margin: 0; font-weight: 900; font-size: 2.5rem; text-shadow: 0 4px 10px rgb
     cursor: pointer;
     outline: none;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    appearance: none; /* Remove default arrow */
+    appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%236C5CE7%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-    background-repeat: no-repeat;
-    background-position: right 15px top 50%;
-    background-size: 12px auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
 }
 
 .select-wrapper select:hover {
     border-color: var(--primary);
-    background-color: rgba(42, 42, 64, 1);
+    background-color: rgba(42, 42, 64, 0.9);
     transform: translateY(-2px);
-    box-shadow: 0 7px 14px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 20px rgba(108, 92, 231, 0.2);
 }
 
 .select-wrapper select:focus {
     border-color: var(--secondary);
-    box-shadow: 0 0 0 3px rgba(0, 206, 201, 0.2);
+    box-shadow: 0 0 0 4px rgba(0, 206, 201, 0.15);
 }
 
-@keyframes select-pulse {
-    0% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.4); }
-    70% { box-shadow: 0 0 0 6px rgba(108, 92, 231, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); }
-}
-
-.select-wrapper:hover select {
-    animation: select-pulse 2s infinite;
+.select-wrapper select option {
+    background-color: var(--card-bg);
+    color: white;
+    padding: 10px;
 }
 
 .divider {

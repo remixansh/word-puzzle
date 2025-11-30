@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Word Search Battle</title>
-    <!-- Modern Font -->
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -110,6 +109,17 @@
             <h1 id="winner-msg">GAME OVER</h1>
             <p id="final-score-msg">The battle has ended.</p>
             <button onclick="location.reload()" class="btn btn-primary">Play Again</button>
+        </div>
+    </div>
+
+    <!-- EASTER EGG MODAL -->
+    <div id="easter-egg" class="modal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content pop-in" style="border: 2px solid #fab1a0;">
+            <div style="font-size: 5rem; margin-bottom: 10px;">🐒</div>
+            <h1 style="color: #ff7675;">You DUMB</h1>
+            <p style="color: #a0a0b0;">You selected the whole board...</p>
+            <button onclick="location.reload()" class="btn btn-secondary">Restart</button>
         </div>
     </div>
 

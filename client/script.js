@@ -1,5 +1,4 @@
 const PROD_SERVER = "https://word-puzzle-iaz0.onrender.com"; 
-
 const isLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 const socket = io(isLocal ? 'http://localhost:5000' : PROD_SERVER);
 
@@ -58,7 +57,6 @@ socket.on('room_created', (data) => {
     document.getElementById('status').appendChild(waitingMsg);
     
     currentRoom = data.roomId;
-    
     const card = document.querySelector('.card');
     if(card) card.style.display = 'none';
 });
@@ -114,7 +112,7 @@ socket.on('update_board', (data) => {
 socket.on('player_left', (data) => {
     alert(data.msg);
     localStorage.removeItem('wordgame_roomid');
-    location.reload();
+    location.reload(); // Reload to go back to lobby
 });
 
 function markFoundWord(word, finderId, indices) {
@@ -247,6 +245,13 @@ function handleSelect(cell) {
         cell.classList.add('selected');
         selectedPath.push(cell);
     }
+
+    // EASTER EGG: Check if all 100 cells are selected (Grid is 10x10)
+    if (selectedPath.length >= 100) {
+        document.getElementById('easter-egg').style.display = 'flex';
+        return;
+    }
+
     checkWord();
 }
 

@@ -142,8 +142,7 @@ socket.on('game_over', (data) => {
     const modal = document.getElementById('game-over');
     const msg = document.getElementById('winner-msg');
     const finalScoreMsg = document.getElementById('final-score-msg');
-    
-    localStorage.removeItem('wordgame_roomid');
+
 
     if(data.winner === myUserId) {
         msg.innerText = "VICTORY! 🏆";

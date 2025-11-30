@@ -21,9 +21,11 @@ const myUserId = getUserId();
 window.onload = () => {
     const savedRoom = localStorage.getItem('wordgame_roomid');
     if (savedRoom) {
+        // Only rejoin if we have a saved ID (meaning game had already started)
         document.getElementById('roomInput').value = savedRoom;
         document.getElementById('status').innerText = "Rejoining previous game...";
         setTimeout(() => {
+             // Re-verify the room ID hasn't been cleared by a fresh action
              if(localStorage.getItem('wordgame_roomid') === savedRoom) {
                  joinRoom(true); // true = isRejoin
              }
@@ -142,7 +144,8 @@ socket.on('game_over', (data) => {
     const modal = document.getElementById('game-over');
     const msg = document.getElementById('winner-msg');
     const finalScoreMsg = document.getElementById('final-score-msg');
-
+    
+    localStorage.removeItem('wordgame_roomid');
 
     if(data.winner === myUserId) {
         msg.innerText = "VICTORY! 🏆";

@@ -49,17 +49,23 @@ function getThemeIcon(theme) {
 // --- SOCKET LISTENERS ---
 
 socket.on('room_created', (data) => {
+    // 1. Show the Room ID
     document.getElementById('status').innerText = `Room Created: ${data.roomId}`;
-    document.getElementById('status').innerHTML += `<br><br><span style="color:var(--secondary)">Waiting for opponent to join...</span> <div class="pulse">⏳</div>`;
+    
+    const waitingMsg = document.createElement('div');
+    waitingMsg.innerHTML = `<br><b>Waiting for opponent to join...</b> ⏳`;
+    waitingMsg.style.color = "#f39c12"; 
+    document.getElementById('status').appendChild(waitingMsg);
     
     currentRoom = data.roomId;
     localStorage.setItem('wordgame_roomid', currentRoom);
-    
-    document.querySelector('.card').style.display = 'none';
+    const card = document.querySelector('.card');
+    if(card) card.style.display = 'none';
 });
 
 socket.on('error', (msg) => {
     alert("Error: " + msg);
+    // If room invalid, clear storage to prevent infinite rejoin loop
     if(msg.includes('not found') || msg.includes('full')) {
         localStorage.removeItem('wordgame_roomid');
         location.reload(); 
@@ -67,6 +73,7 @@ socket.on('error', (msg) => {
 });
 
 socket.on('game_start', (data) => {
+    // Hide lobby, Show Game
     document.getElementById('lobby').style.display = 'none';
     document.getElementById('game').style.display = 'block';
     
@@ -173,7 +180,8 @@ function joinRoom(isRejoin = false) {
         document.getElementById('status').innerText = "Joining...";
         socket.emit('join_room', { roomId: id, userId: myUserId });
         currentRoom = id;
-       
+        
+        // Save new ID
         localStorage.setItem('wordgame_roomid', id);
     }
 }

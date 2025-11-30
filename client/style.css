@@ -464,3 +464,9 @@ input:focus { border-color: var(--secondary); background: rgba(0,0,0,0.3); }
         font-size: 0.75rem;
     }
 }
+
+#roundSelect option {
+    background-color: var(--card-bg); 
+    color: white;
+    padding: 12px;
+}

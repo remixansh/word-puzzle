@@ -24,7 +24,12 @@ window.onload = () => {
     if (savedRoom) {
         document.getElementById('roomInput').value = savedRoom;
         document.getElementById('status').innerText = "Rejoining previous game...";
-        setTimeout(() => joinRoom(), 500); 
+        setTimeout(() => {
+             // Re-verify the room ID hasn't been cleared by a fresh action
+             if(localStorage.getItem('wordgame_roomid') === savedRoom) {
+                 joinRoom(true); // true = isRejoin
+             }
+        }, 500); 
     }
 };
 
@@ -44,14 +49,18 @@ function getThemeIcon(theme) {
 // --- SOCKET LISTENERS ---
 
 socket.on('room_created', (data) => {
-    document.getElementById('status').innerText = `Room ID: ${data.roomId}`;
+    document.getElementById('status').innerText = `Room Created: ${data.roomId}`;
+    document.getElementById('status').innerHTML += `<br><br><span style="color:var(--secondary)">Waiting for opponent to join...</span> <div class="pulse">⏳</div>`;
+    
     currentRoom = data.roomId;
     localStorage.setItem('wordgame_roomid', currentRoom);
+    
+    document.querySelector('.card').style.display = 'none';
 });
 
 socket.on('error', (msg) => {
     alert("Error: " + msg);
-    if(msg.includes('not found')) {
+    if(msg.includes('not found') || msg.includes('full')) {
         localStorage.removeItem('wordgame_roomid');
         location.reload(); 
     }
@@ -63,9 +72,9 @@ socket.on('game_start', (data) => {
     
     currentRoom = localStorage.getItem('wordgame_roomid') || currentRoom;
     document.getElementById('room-display').innerText = `${currentRoom}`;
+    
     const themeName = data.theme || 'Random';
     const icon = getThemeIcon(themeName);
-
     const displayName = themeName.charAt(0).toUpperCase() + themeName.slice(1);
     document.getElementById('theme-display').innerText = `${displayName} ${icon}`;
     
@@ -146,17 +155,25 @@ socket.on('game_over', (data) => {
 
 function createRoom() {
     document.getElementById('status').innerText = "Creating Room...";
+    
+    localStorage.removeItem('wordgame_roomid');
+    
     const rounds = document.getElementById('roundSelect').value;
     socket.emit('create_room', { userId: myUserId, rounds: rounds });
 }
 
-function joinRoom() {
-    const id = document.getElementById('roomInput').value.trim();
+function joinRoom(isRejoin = false) {
+    let id = isRejoin ? localStorage.getItem('wordgame_roomid') : document.getElementById('roomInput').value.trim();
+    
     if(id) {
+        if(!isRejoin) {
+             localStorage.removeItem('wordgame_roomid');
+        }
+        
         document.getElementById('status').innerText = "Joining...";
-        localStorage.removeItem('wordgame_roomid');
         socket.emit('join_room', { roomId: id, userId: myUserId });
         currentRoom = id;
+       
         localStorage.setItem('wordgame_roomid', id);
     }
 }
@@ -183,7 +200,6 @@ function renderBoard(grid) {
             cell.dataset.char = char;
             cell.onmousedown = () => handleSelect(cell);
             cell.ontouchstart = (e) => { e.preventDefault(); handleSelect(cell); };
-            // Add mouseover for drag selection
             cell.onmouseover = (e) => {
                 if(e.buttons === 1) handleSelect(cell);
             }

@@ -207,6 +207,7 @@ function renderBoard(grid) {
             cell.dataset.char = char;
             cell.onmousedown = () => handleSelect(cell);
             cell.ontouchstart = (e) => { e.preventDefault(); handleSelect(cell); };
+            // Add mouseover for drag selection
             cell.onmouseover = (e) => {
                 if(e.buttons === 1) handleSelect(cell);
             }
@@ -248,7 +249,14 @@ function handleSelect(cell) {
 
     // EASTER EGG: Check if all 100 cells are selected (Grid is 10x10)
     if (selectedPath.length >= 100) {
-        document.getElementById('easter-egg').style.display = 'flex';
+        const easterEgg = document.getElementById('easter-egg');
+        easterEgg.style.display = 'flex';
+        setTimeout(() => {
+            easterEgg.style.display = 'none';
+            // Clear selection too
+            selectedPath.forEach(c => c.classList.remove('selected'));
+            selectedPath = [];
+        }, 4000);
         return;
     }
 

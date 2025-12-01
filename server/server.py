@@ -75,18 +75,42 @@ def create_grid(words, size=10):
     return grid, placements
 
 # --- NEW ROUND GENERATOR ---
-def generate_new_round():
+def generate_new_round(used_themes=None):
+    if used_themes is None:
+        used_themes = []
+        
     try:
+        # Get all document references
         docs = list(db.collection('word_packs').stream())
-        if docs:
-            category = random.choice(docs).id
+        all_ids = [d.id for d in docs]
+        
+        # Filter: Only keep IDs that are NOT in used_themes
+        available_ids = [uid for uid in all_ids if uid not in used_themes]
+        
+        # reset to allow repeats so the game doesn't crash.
+        if not available_ids:
+            available_ids = all_ids
+
+        if available_ids:
+            category = random.choice(available_ids)
             words_list = [w.upper() for w in db.collection('word_packs').document(category).get().to_dict().get('words', [])]
         else:
             category = "Default"; words_list = ["PYTHON", "CODE"]
-    except: category = "Error"; words_list = ["ERROR"]
-    grid, placements = create_grid(words_list)
-    return {'grid': grid, 'words': words_list, 'placements': placements, 'theme': category, 'found_history': [], 'found_words': []}
+            
+    except Exception as e: 
+        print(f"Gen Error: {e}")
+        category = "Error"; words_list = ["ERROR"]
 
+    grid, placements = create_grid(words_list)
+    
+    return {
+        'grid': grid, 
+        'words': words_list, 
+        'placements': placements, 
+        'theme': category, 
+        'found_history': [], 
+        'found_words': []
+    }
 # --- SOCKET EVENTS ---
 @sio.event
 def create_room(sid, data):
@@ -95,7 +119,8 @@ def create_room(sid, data):
     total_rounds = int(data.get('rounds', 5))
     sio.enter_room(sid, room_id)
     
-    round_data = generate_new_round()
+    # Pass empty list for first round
+    round_data = generate_new_round([]) 
     
     rooms[room_id] = {
         'roomId': room_id, 
@@ -103,8 +128,9 @@ def create_room(sid, data):
         'total_rounds': total_rounds, 
         'scores': {user_id: 0}, 
         'players': {user_id: sid}, 
-        'creator_sid': sid, # Track creator to handle disconnect
+        'creator_sid': sid,
         'status': 'waiting',
+        'used_themes': [round_data['theme']],
         **round_data
     }
     
@@ -145,7 +171,6 @@ def join_room(sid, data):
 @sio.event
 def leave_game(sid, data):
     room_id = str(data.get('roomId')).strip()
-    # Explicit leave -> Notify players
     cleanup_room(room_id, notify=True)
 
 @sio.event
@@ -179,13 +204,24 @@ def word_found(sid, data):
         if len(room['found_words']) == len(room['words']):
             if room.get('current_round', 1) < room.get('total_rounds', 5):
                 room['current_round'] += 1
-                room.update(generate_new_round())
+                past_themes = room.get('used_themes', [])
+                new_round_data = generate_new_round(past_themes)
+                room.update(new_round_data)
+                if 'used_themes' not in room: room['used_themes'] = []
+                room['used_themes'].append(new_round_data['theme'])
                 save_room_state(room_id)
-                sio.emit('game_start', {'grid': room['grid'], 'words': room['words'], 'scores': room['scores'], 'theme': room['theme'], 'found_history': [], 'current_round': room['current_round'], 'total_rounds': room['total_rounds']}, room=room_id)
+                sio.emit('game_start', {
+                    'grid': room['grid'], 
+                    'words': room['words'], 
+                    'scores': room['scores'], 
+                    'theme': room['theme'], 
+                    'found_history': [], 
+                    'current_round': room['current_round'], 
+                    'total_rounds': room['total_rounds']
+                }, room=room_id)
             else:
                 winner_id = max(room['scores'], key=room['scores'].get)
                 sio.emit('game_over', {'winner': winner_id}, room=room_id)
-                
                 cleanup_room(room_id, notify=False)
 
 if __name__ == '__main__':
